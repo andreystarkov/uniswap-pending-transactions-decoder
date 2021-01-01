@@ -1,83 +1,50 @@
 const Web3 = require('web3');
-
+const Contract = require('web3-eth-contract')
 const wsProviderAddress = 'ws://127.0.0.1:31337'
-const httpProvider = 'http'
-// const web3 = new Web3(wsProvider);
+const uniswapV2RouterAbi = require('./uniswap/abi.json')
+const uniswapV2RouterAddress = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+const web3UniswapV2ContractProvider = new Contract(uniswapV2RouterAbi)
 
+const infuraNodeAddress = 'https://mainnet.infura.io/v3/ff07ae588b834604b3ff84320349fc60'
+const uniswapAddress = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
 
-function test () {
-    const webSocketProvider = new Web3.providers.WebsocketProvider(wsProviderAddress);
+const web3LocalProvider = new Web3.providers.WebsocketProvider('ws://127.0.0.0:31337')
+// const infuraLocalProvider = new Web3.providers.WebsocketProvider(infuraNodeAddress)
+const web3 = new Web3(web3LocalProvider)
+console.log({ web3 })
 
-    const web3 = new Web3(webSocketProvider)
-    console.log({ web3, ...web3.eth })
-    const pending = web3.eth.getPendingTransactions()
-    console.log({ pending })
-    var subscription = web3.eth.subscribe('logs', {}, function (error, result) {
-        if (!error)
-            console.log(result);
-    })
-        .on("connected", function (subscriptionId) {
-            console.log({ subscriptionId })
-        })
-        .on("data", function (log) {
-            console.log({ log });
-        })
-        .on("changed", function (log) {
-            console.log('changed', { log })
-        });
-}
+// console.log({ web3UniswapV2ContractProvider })
 
-test()
+const defaultRPCQueryParams = { module: 'proxy', action: 'eth_getTransactionByHash' }
+
+const etherscanApiAddress = 'https://api.etherscan.io/api'
+const etherscanApiKey = 'EBE8TMKV2KDY19QBKISQAEQR89M5RBVZAD'
+
+const getTransactionByApi = (txhash, apikey) => axios.get(etherscanApiAddress, { ...defaultRPCQueryParams, txhash, apikey })
+const getTransactionByEtherscanApi = (txhash) =>    
+    axios.get(etherscanApiAddress, { ...defaultRPCQueryParams, txhash, apikey: etherscanApiKey })
+ 
+
 function watchEtherTransfers () {
-    // Instantiate web3 with WebSocket provider
-    const web3 = new Web3(new Web3.providers.WebsocketProvider(wsProviderAddress))
-
-    // Instantiate subscription object
     const subscription = web3.eth.subscribe('pendingTransactions')
-    console.log({ subscription })
-    // Subscribe to pending transactions
     subscription.subscribe((error, result) => {
-        if (error) console.log(error)
-    })
-        .on('data', async (txHash) => {
+        if (error) console.log('Subscription error', { error })
+    }).on('data', async (txHash) => {
             console.log({ txHash })
             try {
-                // Instantiate web3 with HttpProvider
-                const web3Http = new Web3('https://rinkeby.infura.io/')
-
-                // Get transaction details
-                const trx = await web3Http.eth.getTransaction(txHash)
+                const web3Http = new Web3(web3UniswapV2ContractProvider)
+                const trx = await web3.eth.getTransaction(txHash)
                 console.log({ trx })
-                const valid = validateTransaction(trx)
-                // If transaction is not valid, simply return
-                if (!valid) return
-
-                console.log('Found incoming Ether transaction from ' + process.env.WALLET_FROM + ' to ' + process.env.WALLET_TO);
-                console.log('Transaction value is: ' + process.env.AMOUNT)
-                console.log('Transaction hash is: ' + txHash + '\n')
-
-                // Initiate transaction confirmation
-                confirmEtherTransaction(txHash)
-
-                // Unsubscribe from pending transactions.
-                subscription.unsubscribe()
+                if (trx.to === uniswapAddress) {
+                    const uniswapTransactionRoutes = web3.eth.abi.decodeParameter('address[]', trx.input)
+                    const uniswapTransaction = getTransactionByEtherscanApi(txHash)
+                    console.log({ uniswapTransactionRoutes, uniswapTransaction })
+                }
             }
             catch (error) {
-                console.log(error)
+                console.log({ error })
             }
         })
 }
-watchEtherTransfers()
-// const pendingSubscription = web3.eth.subscribe('pendingTransactions', (error, result) => {
-//     console.log({ error, result })
-// }).on('data', transaction => {
-//     console.log({ transaction })
-// })
-// const subscription = web3.on('data', data => console.log({ ...data }))
 
-// console.log({ web3, subscription })
-// // unsubscribes the subscription
-// subscription.unsubscribe(function (error, success) {
-//     if (success)
-//         console.log('Successfully unsubscribed!');
-// });
+watchEtherTransfers()
