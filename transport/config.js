@@ -1,0 +1,5 @@
+export const wsProviderAddress = 'ws://127.0.0.1:31337'
+export const uniswapV2RouterAddress = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+export const uniswapV2RouterAbiPath = '../uniswap/abi.json'
+export const infuraNodeAddress = 'https://mainnet.infura.io/v3/ff07ae588b834604b3ff84320349fc60'
+export const web3LocalAddress = 'ws://127.0.0.0:31337'

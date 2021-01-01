@@ -1,7 +1,7 @@
 const Web3 = require('web3');
 const Contract = require('web3-eth-contract')
 const wsProviderAddress = 'ws://127.0.0.1:31337'
-const uniswapV2RouterAbi = require('./uniswap/abi.json')
+const uniswapV2RouterAbi = require('./transport/uniswap/abi.json')
 const uniswapV2RouterAddress = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
 const web3UniswapV2ContractProvider = new Contract(uniswapV2RouterAbi)
 
